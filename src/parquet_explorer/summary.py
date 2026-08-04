@@ -3,6 +3,7 @@
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pandas as pd
 import pyarrow.parquet as pq
 from rich.console import Console
@@ -29,6 +30,8 @@ def _fmt(value: Any) -> str:
             return "-"
     except (TypeError, ValueError):
         pass
+    if isinstance(value, (np.integer, np.floating, np.bool_)):
+        value = value.item()
     if isinstance(value, bool):
         return str(value)
     if isinstance(value, int):

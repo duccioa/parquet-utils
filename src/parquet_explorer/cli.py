@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 from parquet_explorer.convert import convert
 from parquet_explorer.hexagon import hex_aggregate
 from parquet_explorer.io import load_parquet
+from parquet_explorer.show import print_show
 from parquet_explorer.summary import print_summary
 
 
@@ -69,6 +70,60 @@ def summary(file: Path, groupby: str | None, output: Path | None) -> None:
         return
     try:
         print_summary(file, df, is_geo, groupby=groupby)
+    except ValueError as exc:
+        raise click.ClickException(str(exc)) from exc
+
+
+@cli.command()
+@click.argument("file", type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.option(
+    "--all-col", is_flag=True, help="Print all columns instead of the first and last 4."
+)
+@click.option(
+    "--cols",
+    metavar="SPEC",
+    help="Comma-separated column names or 1-based column indices, "
+    "e.g. \"col1,col2,'col 3'\" or \"1,2,3,5,8\". Quote names containing commas.",
+)
+@click.option(
+    "--head",
+    type=click.IntRange(min=1),
+    is_flag=False,
+    flag_value=5,
+    default=None,
+    metavar="N",
+    help="Print only the first N rows [default: 5].",
+)
+@click.option(
+    "--tail",
+    type=click.IntRange(min=1),
+    is_flag=False,
+    flag_value=5,
+    default=None,
+    metavar="N",
+    help="Print only the last N rows [default: 5].",
+)
+@click.option(
+    "--rows",
+    metavar="START:STOP",
+    help="Print rows START to STOP (1-based, inclusive), e.g. 5:10.",
+)
+def show(
+    file: Path,
+    all_col: bool,
+    cols: str | None,
+    head: int | None,
+    tail: int | None,
+    rows: str | None,
+) -> None:
+    """Print rows of a parquet file as a table.
+
+    Without options, prints the first and last 5 rows and the first
+    and last 4 columns.
+    """
+    df, _ = load_parquet(file)
+    try:
+        print_show(df, all_col=all_col, cols=cols, head=head, tail=tail, rows=rows)
     except ValueError as exc:
         raise click.ClickException(str(exc)) from exc
 

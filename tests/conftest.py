@@ -35,6 +35,17 @@ def many_groups_parquet(tmp_path: Path) -> Path:
 
 
 @pytest.fixture
+def wide_parquet(tmp_path: Path) -> Path:
+    """20 rows, 10 columns (c01..c09 plus 'my col'), self-describing values."""
+    n = 20
+    data = {f"c{i:02d}": [f"r{r:02d}c{i:02d}" for r in range(1, n + 1)] for i in range(1, 10)}
+    data["my col"] = [f"r{r:02d}cm" for r in range(1, n + 1)]
+    path = tmp_path / "wide.parquet"
+    pd.DataFrame(data).to_parquet(path)
+    return path
+
+
+@pytest.fixture
 def geo_parquet(tmp_path: Path) -> Path:
     gdf = gpd.GeoDataFrame(
         {"value": [1.0, 2.0, 4.0], "name": ["a", "b", "c"]},
