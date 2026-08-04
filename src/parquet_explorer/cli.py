@@ -1,0 +1,114 @@
+"""parx command line interface."""
+
+from pathlib import Path
+from typing import TYPE_CHECKING, cast
+
+import rich_click as click
+from click.exceptions import UsageError
+
+if TYPE_CHECKING:
+    import geopandas as gpd
+
+from parquet_explorer.convert import convert
+from parquet_explorer.hexagon import hex_aggregate
+from parquet_explorer.io import load_parquet
+from parquet_explorer.summary import print_summary
+
+
+class ParxGroup(click.RichGroup):
+    """Group that routes ``parx <file.parquet>`` to the ``summary`` command."""
+
+    def resolve_command(
+        self, ctx: click.Context, args: list[str]
+    ) -> tuple[str | None, click.Command | None, list[str]]:
+        try:
+            return super().resolve_command(ctx, args)
+        except UsageError:
+            summary_cmd = self.get_command(ctx, "summary")
+            assert summary_cmd is not None
+            return "summary", summary_cmd, args
+
+
+@click.group(cls=ParxGroup, invoke_without_command=True, no_args_is_help=False)
+@click.version_option(package_name="parquet-explorer")
+@click.pass_context
+def cli(ctx: click.Context) -> None:
+    """Explore parquet and geoparquet files.
+
+    Pass a file directly to print a summary: `parx data.parquet`.
+    """
+    if ctx.invoked_subcommand is None:
+        click.echo(ctx.get_help())
+        ctx.exit(0)
+
+
+@cli.command()
+@click.argument("file", type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.option(
+    "--groupby",
+    "-g",
+    metavar="COLUMN",
+    help="Group numeric summaries by this column (skipped if more than 10 groups).",
+)
+@click.option(
+    "--output",
+    "-o",
+    type=click.Path(dir_okay=False, path_type=Path),
+    help="Convert the file instead of summarising it. "
+    "Format is detected from the suffix: .csv, .xlsx (parquet) or .gpkg (geoparquet).",
+)
+def summary(file: Path, groupby: str | None, output: Path | None) -> None:
+    """Print a summary of a parquet file, or convert it with --output."""
+    df, is_geo = load_parquet(file)
+    if output is not None:
+        try:
+            note = convert(df, is_geo, output)
+        except ValueError as exc:
+            raise click.ClickException(str(exc)) from exc
+        click.echo(f"Written {output}" + (f" ({note})" if note else ""))
+        return
+    try:
+        print_summary(file, df, is_geo, groupby=groupby)
+    except ValueError as exc:
+        raise click.ClickException(str(exc)) from exc
+
+
+@cli.command()
+@click.argument("file", type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.option(
+    "--output",
+    "-o",
+    required=True,
+    type=click.Path(dir_okay=False, path_type=Path),
+    help="Output geoparquet file with the hexagon polygons.",
+)
+@click.option(
+    "--res",
+    "-r",
+    default=9,
+    show_default=True,
+    type=click.IntRange(0, 15),
+    help="H3 resolution.",
+)
+@click.option(
+    "--aggr-fun",
+    metavar="SPEC",
+    help='Per-column aggregation functions, e.g. "mycolumn1=mean, mycolumn2=sum". '
+    "Numeric columns default to sum.",
+)
+def hex(file: Path, output: Path, res: int, aggr_fun: str | None) -> None:
+    """Aggregate a point geoparquet file to H3 hexagons."""
+    df, is_geo = load_parquet(file)
+    if not is_geo:
+        raise click.ClickException(f"'{file}' is not a geoparquet file")
+    try:
+        result = hex_aggregate(cast("gpd.GeoDataFrame", df), res, aggr_fun)
+    except ValueError as exc:
+        raise click.ClickException(str(exc)) from exc
+    output.parent.mkdir(parents=True, exist_ok=True)
+    result.to_parquet(output)
+    click.echo(f"Written {output} ({len(result):,} hexagons at resolution {res})")
+
+
+if __name__ == "__main__":
+    cli()
