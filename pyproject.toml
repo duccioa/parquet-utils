@@ -1,4 +1,7 @@
 [project]
+name = "parquet-utils"
+version = "0.2.0"
+description = "parx: a CLI to explore, convert and process parquet and geoparquet files"
 authors = [{name = "Duccio Aiazzi", email = "duccioa@users.noreply.github.com"}]
 dependencies = [
     "pandas>=3.0.5,<4",
@@ -9,10 +12,7 @@ dependencies = [
     "openpyxl>=3.1,<4",
     "jenkspy>=0.4,<1",
 ]
-name = "parquet-explorer"
 requires-python = ">= 3.11"
-version = "0.1.0"
-description = "parx: a simple CLI to explore parquet and geoparquet files"
 
 [project.scripts]
 parx = "parquet_utils.cli:cli"

@@ -1,6 +1,12 @@
 # News
 
-## Unreleased
+## 0.2.0 (2026-08-18)
+
+### Changed
+
+- The package is renamed from `parquet-explorer` to `parquet-utils` (import
+  package `parquet_explorer` → `parquet_utils`) to reflect a scope that goes
+  beyond exploring. The `parx` command and all its options are unchanged.
 
 ### Fixed
 
