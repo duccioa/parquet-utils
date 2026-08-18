@@ -7,6 +7,7 @@ dependencies = [
     "rich-click>=1.9.8,<2",
     "h3>=4.5.0,<5",
     "openpyxl>=3.1,<4",
+    "jenkspy>=0.4,<1",
 ]
 name = "parquet-explorer"
 requires-python = ">= 3.11"

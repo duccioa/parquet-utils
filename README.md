@@ -96,6 +96,23 @@ with the `h3` cell id, a `count` of input points, and the aggregated columns.
 Input geometries must be points with a CRS; rows with missing or empty
 geometries are ignored.
 
+### Jenks classification
+
+Add a Jenks natural breaks class column to a parquet file:
+
+```bash
+parx jenks data.parquet --column price
+```
+
+The breaks are computed over `--column/-c` on a random sample of the rows
+(`--sample-size-perc`, default 0.1 = 10%) with `--class-num/-n` classes
+(default 5). The result is stored in a `<column>_label` column — a sequence
+number from low to high values followed by the class range, e.g.
+`2 [134.1 - 362.3]`. An existing column of that name is overwritten.
+
+The output goes to `<file>_labeled.parquet` by default; use `--output/-o` for
+a different file or `--overwrite` to write back to the input file.
+
 ## Development
 
 Create the dev environment and run the checks:
@@ -115,3 +132,4 @@ The package lives in `src/parquet_explorer/`:
 - `show.py` — row display
 - `convert.py` — format conversion
 - `hexagon.py` — H3 aggregation
+- `jenks.py` — Jenks natural breaks classification

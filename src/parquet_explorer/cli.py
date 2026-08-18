@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 from parquet_explorer.convert import convert
 from parquet_explorer.hexagon import hex_aggregate
 from parquet_explorer.io import load_parquet
+from parquet_explorer.jenks import add_jenks_labels
 from parquet_explorer.show import print_show
 from parquet_explorer.summary import print_summary
 
@@ -163,6 +164,67 @@ def hex(file: Path, output: Path, res: int, aggr_fun: str | None) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
     result.to_parquet(output)
     click.echo(f"Written {output} ({len(result):,} hexagons at resolution {res})")
+
+
+@cli.command()
+@click.argument("file", type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.option("--column", "-c", required=True, help="Numeric column to classify.")
+@click.option(
+    "--sample-size-perc",
+    default=0.1,
+    show_default=True,
+    type=click.FloatRange(0, 1, min_open=True),
+    help="Fraction of the rows used to compute the breaks.",
+)
+@click.option(
+    "--class-num",
+    "-n",
+    default=5,
+    show_default=True,
+    type=click.IntRange(min=2),
+    help="Number of classes.",
+)
+@click.option(
+    "--overwrite",
+    is_flag=True,
+    help="Write the result back to FILE instead of a new file.",
+)
+@click.option(
+    "--output",
+    "-o",
+    type=click.Path(dir_okay=False, path_type=Path),
+    help="Output parquet file [default: <file>_labeled.parquet].",
+)
+def jenks(
+    file: Path,
+    column: str,
+    sample_size_perc: float,
+    class_num: int,
+    overwrite: bool,
+    output: Path | None,
+) -> None:
+    """Add a Jenks natural breaks class column to a parquet file.
+
+    Classes are computed over COLUMN on a random sample of the rows and
+    stored in a `<column>_label` column (overwritten if it exists). Labels
+    are a sequence number from low to high values with the class range,
+    e.g. "2 [134.1 - 362.3]".
+    """
+    if overwrite and output is not None:
+        raise click.ClickException("--overwrite and --output cannot be combined")
+    out = file if overwrite else (output or file.with_name(f"{file.stem}_labeled.parquet"))
+    if out.suffix.lower() != ".parquet":
+        raise click.ClickException(f"output must be a .parquet file, got '{out.name}'")
+    df, _ = load_parquet(file)
+    try:
+        label_column, n_classes = add_jenks_labels(
+            df, column, class_num=class_num, sample_frac=sample_size_perc
+        )
+    except ValueError as exc:
+        raise click.ClickException(str(exc)) from exc
+    out.parent.mkdir(parents=True, exist_ok=True)
+    df.to_parquet(out)
+    click.echo(f"Written {out} ('{label_column}' with {n_classes} classes)")
 
 
 if __name__ == "__main__":
