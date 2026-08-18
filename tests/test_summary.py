@@ -1,3 +1,5 @@
+import pandas as pd
+
 from parquet_explorer.cli import cli
 
 
@@ -50,6 +52,40 @@ def test_groupby_missing_column_fails(runner, plain_parquet):
     result = runner.invoke(cli, [str(plain_parquet), "-g", "nope"])
     assert result.exit_code != 0
     assert "not found" in result.output
+
+
+def test_categorical_and_bool_columns_are_summarised(runner, tmp_path):
+    """Every column must appear somewhere in the summary (see 'Other columns')."""
+    df = pd.DataFrame(
+        {
+            "num": [1.0, 2.0, 3.0],
+            "cat": pd.Categorical(["low", "high", "low"], categories=["low", "high"]),
+            "flag": [True, False, True],
+            "when": pd.to_datetime(["2026-01-01", "2026-01-02", "2026-01-03"]),
+        }
+    )
+    path = tmp_path / "mixed.parquet"
+    df.to_parquet(path)
+    result = runner.invoke(cli, [str(path)], env={"COLUMNS": "300"})
+    assert result.exit_code == 0, result.output
+    assert "Other columns" in result.output
+    for column in ("num", "cat", "flag", "when"):
+        assert column in result.output
+    # categorical values are listed
+    assert "low" in result.output
+    assert "high" in result.output
+
+
+def test_jenks_label_appears_in_summary(runner, tmp_path):
+    """Regression: the jenks label column is categorical and was dropped."""
+    pd.DataFrame({"value": range(100)}).to_parquet(tmp_path / "v.parquet")
+    labelled = runner.invoke(
+        cli, ["jenks", str(tmp_path / "v.parquet"), "-c", "value", "--overwrite"]
+    )
+    assert labelled.exit_code == 0, labelled.output
+    result = runner.invoke(cli, [str(tmp_path / "v.parquet")], env={"COLUMNS": "300"})
+    assert result.exit_code == 0, result.output
+    assert "value_label" in result.output
 
 
 def test_missing_file_fails(runner, tmp_path):

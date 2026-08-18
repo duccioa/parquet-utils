@@ -36,6 +36,8 @@ Prints:
   row groups, file size, writer.
 - **Numeric columns** — type, NAs, min, q25, median, mean, q75, max, sum.
 - **String columns** — type, NAs, number of empty strings.
+- **Other columns** (categorical, boolean, datetime, …) — type, NAs, number of
+  distinct values, and the values themselves (a range if there are many).
 - **Geometry columns** (geoparquet only, shown separately) — CRS, geometry
   types, NAs, number of empty geometries.
 

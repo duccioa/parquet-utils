@@ -10,6 +10,7 @@ from rich.console import Console
 from rich.table import Table
 
 MAX_GROUPS = 10
+MAX_VALUES = 10
 
 NUMERIC_STATS = ["NAs", "min", "q25", "median", "mean", "q75", "max", "sum"]
 
@@ -54,18 +55,26 @@ def _numeric_stats(series: pd.Series) -> dict[str, Any]:
     }
 
 
-def _split_columns(df: pd.DataFrame) -> tuple[list[str], list[str], list[str]]:
-    """Split column names into (geometry, numeric, string) groups."""
-    geometry, numeric, string = [], [], []
+def _split_columns(df: pd.DataFrame) -> tuple[list[str], list[str], list[str], list[str]]:
+    """Split column names into (geometry, numeric, string, other) groups.
+
+    Every column lands in exactly one group, so nothing is left out of the
+    summary: categorical, boolean and datetime columns fall into 'other'.
+    """
+    geometry, numeric, string, other = [], [], [], []
     for col in df.columns:
         dtype = df[col].dtype
         if str(dtype) == "geometry":
             geometry.append(col)
+        elif isinstance(dtype, pd.CategoricalDtype):
+            other.append(col)
         elif pd.api.types.is_numeric_dtype(dtype) and not pd.api.types.is_bool_dtype(dtype):
             numeric.append(col)
         elif pd.api.types.is_string_dtype(dtype) or dtype == object:
             string.append(col)
-    return geometry, numeric, string
+        else:
+            other.append(col)
+    return geometry, numeric, string, other
 
 
 def _file_table(path: Path, df: pd.DataFrame, is_geo: bool) -> Table:
@@ -107,6 +116,34 @@ def _string_table(df: pd.DataFrame, columns: list[str]) -> Table:
             str(series.dtype),
             f"{int(series.isna().sum()):,}",
             f"{int((series == '').sum()):,}",
+        )
+    return table
+
+
+def _other_table(df: pd.DataFrame, columns: list[str]) -> Table:
+    """Categorical, boolean, datetime and any other non-numeric columns."""
+    table = Table(title="Other columns", title_justify="left")
+    table.add_column("Column", style="bold")
+    table.add_column("Type")
+    table.add_column("NAs", justify="right")
+    table.add_column("Unique", justify="right")
+    table.add_column("Values", overflow="fold")
+    for col in columns:
+        series = df[col]
+        if isinstance(series.dtype, pd.CategoricalDtype):
+            uniques = list(series.cat.categories)
+        else:
+            uniques = sorted(series.dropna().unique())
+        if len(uniques) <= MAX_VALUES:
+            shown = ", ".join(_fmt(v) for v in uniques)
+        else:
+            shown = f"{_fmt(uniques[0])} … {_fmt(uniques[-1])}"
+        table.add_row(
+            col,
+            str(series.dtype),
+            f"{int(series.isna().sum()):,}",
+            f"{len(uniques):,}",
+            shown or "-",
         )
     return table
 
@@ -161,13 +198,15 @@ def print_summary(
 ) -> None:
     """Print the full summary of a parquet file to the console."""
     console = console or Console()
-    geometry_cols, numeric_cols, string_cols = _split_columns(df)
+    geometry_cols, numeric_cols, string_cols, other_cols = _split_columns(df)
 
     console.print(_file_table(path, df, is_geo))
     if numeric_cols:
         console.print(_numeric_table(df, numeric_cols))
     if string_cols:
         console.print(_string_table(df, string_cols))
+    if other_cols:
+        console.print(_other_table(df, other_cols))
     if geometry_cols:
         console.print(_geometry_table(df, geometry_cols))
 
