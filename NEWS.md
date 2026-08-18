@@ -1,5 +1,23 @@
 # News
 
+## Unreleased
+
+### Fixed
+
+- The summary silently omitted columns that were neither numeric, string nor
+  geometry — categorical (such as the `jenks` label column), boolean and
+  datetime columns simply did not appear. They are now listed in a new
+  **Other columns** table with type, NAs, distinct values and the values
+  themselves.
+
+- New `parx jenks <file> -c COLUMN` command: adds a `<column>_label` column
+  with Jenks natural breaks classes, computed on a random sample of the rows
+  (`--sample-size-perc`, default 10%) with `--class-num/-n` classes
+  (default 5). Labels are a sequence number from low to high with the class
+  range, e.g. `2 [134.1 - 362.3]`. Output defaults to
+  `<file>_labeled.parquet`; `--output/-o` picks another file and
+  `--overwrite` writes back to the input.
+
 ## 0.1.0 (2026-08-04)
 
 First release of `parx`, a CLI to explore parquet and geoparquet files.
