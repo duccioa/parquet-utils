@@ -1,6 +1,6 @@
 import pandas as pd
 
-from parquet_explorer.cli import cli
+from parquet_utils.cli import cli
 
 
 def test_no_args_shows_help(runner):

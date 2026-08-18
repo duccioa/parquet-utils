@@ -9,12 +9,12 @@ from click.exceptions import UsageError
 if TYPE_CHECKING:
     import geopandas as gpd
 
-from parquet_explorer.convert import convert
-from parquet_explorer.hexagon import hex_aggregate
-from parquet_explorer.io import load_parquet
-from parquet_explorer.jenks import add_jenks_labels
-from parquet_explorer.show import print_show
-from parquet_explorer.summary import print_summary
+from parquet_utils.convert import convert
+from parquet_utils.hexagon import hex_aggregate
+from parquet_utils.io import load_parquet
+from parquet_utils.jenks import add_jenks_labels
+from parquet_utils.show import print_show
+from parquet_utils.summary import print_summary
 
 
 class ParxGroup(click.RichGroup):
@@ -32,7 +32,7 @@ class ParxGroup(click.RichGroup):
 
 
 @click.group(cls=ParxGroup, invoke_without_command=True, no_args_is_help=False)
-@click.version_option(package_name="parquet-explorer")
+@click.version_option(package_name="parquet-utils")
 @click.pass_context
 def cli(ctx: click.Context) -> None:
     """Explore parquet and geoparquet files.

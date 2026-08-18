@@ -6,7 +6,7 @@ import jenkspy
 import numpy as np
 import pandas as pd
 
-from parquet_explorer.summary import _fmt
+from parquet_utils.summary import _fmt
 
 LABEL_SUFFIX = "_label"
 SAMPLE_SEED = 0

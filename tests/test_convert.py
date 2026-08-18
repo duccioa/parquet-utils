@@ -1,7 +1,7 @@
 import geopandas as gpd
 import pandas as pd
 
-from parquet_explorer.cli import cli
+from parquet_utils.cli import cli
 
 
 def test_parquet_to_csv(runner, plain_parquet, tmp_path):

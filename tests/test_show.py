@@ -1,7 +1,7 @@
 import pytest
 
-from parquet_explorer.cli import cli
-from parquet_explorer.show import _parse_rows
+from parquet_utils.cli import cli
+from parquet_utils.show import _parse_rows
 
 WIDE_ENV = {"COLUMNS": "300"}
 

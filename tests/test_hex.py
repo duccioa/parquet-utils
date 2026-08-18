@@ -1,8 +1,8 @@
 import geopandas as gpd
 import pytest
 
-from parquet_explorer.cli import cli
-from parquet_explorer.hexagon import parse_aggr_fun
+from parquet_utils.cli import cli
+from parquet_utils.hexagon import parse_aggr_fun
 
 
 def test_parse_aggr_fun():

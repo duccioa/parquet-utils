@@ -1,6 +1,7 @@
-# parquet-explorer
+# parquet-utils
 
-`parx` — a simple CLI to explore parquet and geoparquet files from the terminal.
+`parx` — a CLI to explore, convert and process parquet and geoparquet files
+from the terminal.
 
 Point it at a file to get a quick overview — metadata, per-column statistics,
 a peek at the rows — or use it to convert files and aggregate points to H3
@@ -124,7 +125,7 @@ pixi run -e dev ruff     # lint
 pixi run -e dev ty       # type check
 ```
 
-The package lives in `src/parquet_explorer/`:
+The package lives in `src/parquet_utils/`:
 
 - `cli.py` — rich-click CLI (`parx` entry point)
 - `io.py` — parquet loading and geoparquet detection

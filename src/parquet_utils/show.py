@@ -7,7 +7,7 @@ import pandas as pd
 from rich.console import Console
 from rich.table import Table
 
-from parquet_explorer.summary import _fmt
+from parquet_utils.summary import _fmt
 
 DEFAULT_N = 5
 EDGE_COLS = 4

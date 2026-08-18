@@ -1917,7 +1917,7 @@ packages:
   size: 118849
   timestamp: 1784250406640
 - pypi: ./
-  name: parquet-explorer
+  name: parquet-utils
   requires_dist:
   - pandas>=3.0.5,<4
   - geopandas>=1.1.4,<2
